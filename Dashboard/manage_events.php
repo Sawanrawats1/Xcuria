@@ -18,16 +18,20 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $description = trim($_POST['description']);
     $date        = $_POST['date'] ?? '';
     $time        = $_POST['time'] ?? '00:00:00';
+    $end_date    = $_POST['end_date'] ?? '';
+    $end_time    = $_POST['end_time'] ?? '00:00:00';
     $location    = trim($_POST['location']);
     $interest_id = $_POST['interest_id'] ?? null;
 
-    if (empty($title) || empty($date) || empty($time) || empty($interest_id)) {
-        $error = "Please fill in all required fields (title, date, time, interest).";
+    if (empty($title) || empty($date) || empty($time) || empty($end_date) || empty($end_time) || empty($interest_id)) {
+        $error = "Please fill in all required fields (title, date, time, end date, end time, interest).";
     } else {
         if ($id) {
             // Update event
-            $stmt = $conn->prepare("UPDATE events SET title=?, description=?, date=?, time=?, location=?, interest_id=? WHERE id=?");
-            $stmt->bind_param("sssssii", $title, $description, $date, $time, $location, $interest_id, $id);
+            $stmt = $conn->prepare("UPDATE events SET title=?, description=?, date=?, time=?, end_date=?, end_time=?, location=?, interest_id=? WHERE id=?");
+            // 7 strings (title, description, date, time, end_date, end_time, location)
+            // + 2 ints (interest_id, id) = "sssssssii"
+            $stmt->bind_param("sssssssii", $title, $description, $date, $time, $end_date, $end_time, $location, $interest_id, $id);
             if ($stmt->execute()) {
                 $success = "Event updated successfully.";
             } else {
@@ -36,8 +40,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $stmt->close();
         } else {
             // Insert new event
-            $stmt = $conn->prepare("INSERT INTO events (title, description, date, time, location, interest_id) VALUES (?, ?, ?, ?, ?, ?)");
-            $stmt->bind_param("sssssi", $title, $description, $date, $time, $location, $interest_id);
+            $stmt = $conn->prepare("INSERT INTO events (title, description, date, time, end_date, end_time, location, interest_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?)");
+            // 7 strings + 1 int (interest_id) = "sssssssi"
+            $stmt->bind_param("sssssssi", $title, $description, $date, $time, $end_date, $end_time, $location, $interest_id);
             if ($stmt->execute()) {
                 $success = "New event added successfully.";
             } else {
@@ -286,6 +291,14 @@ $eventsResult = $conn->query("
         <input type="time" name="time" id="form_time" required />
     </div>
     <div>
+        <label for="end_date">End Date *</label>
+        <input type="date" name="end_date" id="form_end_date" required />
+    </div>
+    <div>
+        <label for="end_time">End Time *</label>
+        <input type="time" name="end_time" id="form_end_time" required />
+    </div>
+    <div>
         <label for="location">Location</label>
         <input type="text" name="location" id="form_location" />
     </div>
@@ -307,6 +320,8 @@ $eventsResult = $conn->query("
             <th>Title</th>
             <th>Date</th>
             <th>Time</th>
+            <th>End Date</th>
+            <th>End Time</th>
             <th>Location</th>
             <th>Description</th>
             <th>Actions</th>
@@ -320,6 +335,8 @@ $eventsResult = $conn->query("
     <td><?= htmlspecialchars($ev['title']) ?></td>
     <td><?= htmlspecialchars($ev['date']) ?></td>
     <td><?= htmlspecialchars($ev['time']) ?></td>
+    <td><?= htmlspecialchars($ev['end_date'] ?? '') ?></td>
+    <td><?= htmlspecialchars($ev['end_time'] ?? '') ?></td>
     <td><?= htmlspecialchars($ev['location']) ?></td>
     <td><?= nl2br(htmlspecialchars($ev['description'])) ?></td>
     <td>
@@ -330,7 +347,7 @@ $eventsResult = $conn->query("
 
             <?php endwhile; ?>
         <?php else: ?>
-            <tr><td colspan="7" style="text-align:center;">No events found.</td></tr>
+            <tr><td colspan="9" style="text-align:center;">No events found.</td></tr>
         <?php endif; ?>
     </tbody>
 </table>
@@ -356,6 +373,14 @@ $eventsResult = $conn->query("
       <div>
           <label for="edit_time">Time *</label>
           <input type="time" name="time" id="edit_time" required />
+      </div>
+      <div>
+          <label for="edit_end_date">End Date *</label>
+          <input type="date" name="end_date" id="edit_end_date" required />
+      </div>
+      <div>
+          <label for="edit_end_time">End Time *</label>
+          <input type="time" name="end_time" id="edit_end_time" required />
       </div>
       <div>
           <label for="edit_location">Location</label>
@@ -426,7 +451,7 @@ $eventsResult = $conn->query("
   let deleteEventId = null;
 
   // Open Edit Modal and populate fields
-  function openEditModal(eventId) {
+ function openEditModal(eventId) {
     const row = document.getElementById('event-' + eventId);
     if (!row) return;
 
@@ -436,8 +461,10 @@ $eventsResult = $conn->query("
     document.getElementById('edit_title').value = cells[1].innerText;
     document.getElementById('edit_date').value = cells[2].innerText;
     document.getElementById('edit_time').value = cells[3].innerText;
-    document.getElementById('edit_location').value = cells[4].innerText;
-    document.getElementById('edit_description').value = cells[5].innerText;
+    document.getElementById('edit_end_date').value = cells[4].innerText || cells[2].innerText;
+    document.getElementById('edit_end_time').value = cells[5].innerText || cells[3].innerText;
+    document.getElementById('edit_location').value = cells[6].innerText;
+    document.getElementById('edit_description').value = cells[7].innerText;
 
     editModal.style.display = 'flex';
   }

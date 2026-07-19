@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Login - Xcuria</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+    <style>
+        body {
+            font-family: 'Segoe UI', Arial, sans-serif;
+            background-color: #e9ecef;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            color: #495057;
+        }
+
+        .container {
+            background-color: #ffffff;
+            padding: 40px 50px;
+            border-radius: 12px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
+            width: 100%;
+            max-width: 400px;
+            text-align: center;
+        }
+
+        h2 {
+            color: #4a4aff;
+            margin-bottom: 30px;
+            font-size: 28px;
+            font-weight: 600;
+        }
+
+        .form-group {
+            margin-bottom: 15px; /* Adjust this value for more or less space between fields */
+            text-align: left;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #495057;
+        }
+
+        input {
+            width: 100%;
+            padding: 12px 15px;
+            border: 1px solid #ced4da;
+            border-radius: 8px;
+            box-sizing: border-box;
+            transition: all 0.3s ease-in-out;
+            font-size: 16px;
+        }
+
+        input:focus {
+            outline: none;
+            border-color: #4a4aff;
+            box-shadow: 0 0 0 3px rgba(74, 74, 255, 0.25);
+        }
+
+        .password-wrapper {
+            position: relative;
+        }
+
+        .password-wrapper input {
+            padding-right: 45px;
+        }
+
+        .password-wrapper .toggle-password {
+            position: absolute;
+            top: 50%;
+            right: 15px;
+            transform: translateY(-50%);
+            cursor: pointer;
+            color: #6c757d;
+            z-index: 10;
+        }
+
+        .error {
+            color: #dc3545;
+            font-size: 14px;
+            margin-top: 5px;
+            text-align: left;
+        }
+
+        button {
+            background-color: #4a4aff;
+            color: #ffffff;
+            padding: 14px;
+            width: 100%;
+            border: none;
+            border-radius: 8px;
+            font-weight: bold;
+            font-size: 18px;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+            margin-top: 20px;
+        }
+
+        button:hover {
+            background-color: #3b3bff;
+        }
+
+        .register-link {
+            text-align: center;
+            margin-top: 25px;
+            font-size: 14px;
+        }
+
+        .register-link a {
+            color: #4a4aff;
+            text-decoration: none;
+            font-weight: bold;
+        }
+
+        .register-link a:hover {
+            text-decoration: underline;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <h2>Login</h2>
+        <form id="loginForm" method="POST">
+            <div class="form-group">
+                <label>Email:</label>
+                <input type="email" name="email" required>
+                <div class="error" id="emailError"></div>
+            </div>
+
+            <div class="form-group">
+                <label>Password:</label>
+                <div class="password-wrapper">
+                    <input type="password" name="password" id="passwordInput" required>
+                    <i class="fa-solid fa-eye toggle-password" toggle="#passwordInput"></i>
+                </div>
+                <div class="error" id="passwordError"></div>
+            </div>
+
+            <button type="submit">Login</button>
+        </form>
+
+        <div class="register-link">
+            Don't have an account? <a href="register_form.php">Register here</a>
+        </div>
+    </div>
+
+    <script>
+        // Toggle password visibility using the Font Awesome icon
+        document.querySelector(".toggle-password").addEventListener("click", function () {
+            const passwordInput = document.querySelector(this.getAttribute("toggle"));
+            const isPassword = passwordInput.type === "password";
+            passwordInput.type = isPassword ? "text" : "password";
+
+            this.classList.toggle("fa-eye");
+            this.classList.toggle("fa-eye-slash");
+        });
+        
+        // Handle form submission with AJAX
+        document.getElementById("loginForm").addEventListener("submit", async function (e) {
+            e.preventDefault();
+
+            const form = e.target;
+            const formData = new FormData(form);
+
+            // Clear previous errors
+            document.getElementById("emailError").textContent = "";
+            document.getElementById("passwordError").textContent = "";
+
+            try {
+                const response = await fetch("login.php", {
+                    method: "POST",
+                    body: formData
+                });
+
+                const result = await response.json();
+
+                if (result.success) {
+                    window.location.href = result.redirect;
+                } else {
+                    const msg = result.message.toLowerCase();
+                    if (msg.includes("email")) {
+                        document.getElementById("emailError").textContent = result.message;
+                    } else if (msg.includes("password")) {
+                        document.getElementById("passwordError").textContent = result.message;
+                    } else {
+                        document.getElementById("passwordError").textContent = result.message;
+                    }
+                }
+            } catch (error) {
+                console.error("Error:", error);
+                document.getElementById("passwordError").textContent = "An unexpected error occurred.";
+            }
+        });
+    </script>
+
+</body>
+</html>
